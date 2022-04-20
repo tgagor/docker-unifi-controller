@@ -8,9 +8,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
 VOLUME /tmp /var/cache/apt /var/lib/apt/lists /var/tmp /root/.cache
 
 RUN apt-get update && \
-    apt-get install -y ca-certificates apt-transport-https && \
+    apt-get install -y ca-certificates apt-transport-https wget && \
     echo 'deb https://www.ui.com/downloads/unifi/debian stable ubiquiti' | tee /etc/apt/sources.list.d/unifi.list && \
     wget -O /etc/apt/trusted.gpg.d/unifi-repo.gpg https://dl.ui.com/unifi/unifi-repo.gpg && \
+    apt-get remove -y wget && \
+    apt-get autoremove -y && \
     apt-get update && \
     apt-mark hold openjdk-11-* && \
     apt-get install -y --no-install-recommends unifi
