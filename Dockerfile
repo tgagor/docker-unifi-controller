@@ -19,4 +19,6 @@ VOLUME /usr/lib/unifi/data
 
 WORKDIR /usr/lib/unifi
 
+USER unifi
+
 CMD java $JAVA_OPTS -jar /usr/lib/unifi/lib/ace.jar start
