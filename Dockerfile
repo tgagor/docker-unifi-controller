@@ -1,6 +1,7 @@
 FROM ubuntu:20.04
 MAINTAINER Tomasz Gągor
 
+EXPOSE 8443/tcp 8080/tcp 8843/tcp 8880/tcp 3478/udp 10001/udp
 ENV DEBIAN_FRONTEND=noninteractive \
     JAVA_OPTS="-Xmx256M"
 
@@ -14,11 +15,9 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     apt-get update && \
     apt-mark hold openjdk-11-* && \
-    apt-get install -y openjdk-8-jre unifi
+    apt-get install -y --no-install-recommends unifi
     
 VOLUME /usr/lib/unifi/data
-
-EXPOSE 8443/tcp 8080/tcp 8843/tcp 8880/tcp 3478/udp 10001/udp
 
 WORKDIR /usr/lib/unifi
 

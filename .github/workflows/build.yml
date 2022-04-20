@@ -22,15 +22,11 @@ jobs:
         run: |
           echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
 
-          docker build --tag ghcr.io/tgagor/unifi-controller:ubuntu --cache-from ghcr.io/tgagor/unifi-controller:ubuntu .
+          docker build --tag ghcr.io/tgagor/unifi-controller:${{ github.sha }} --cache-from ghcr.io/tgagor/unifi-controller:ubuntu .
 
-          docker run -i --rm ghcr.io/tgagor/unifi-controller:ubuntu dpkg -s unifi | grep -i version | tee unifi-version
+          # docker run -i --rm ghcr.io/tgagor/unifi-controller:ubuntu dpkg -s unifi | grep -i version | tee unifi-version
 
-          docker tag ghcr.io/tgagor/unifi-controller:ubuntu ghcr.io/tgagor/unifi-controller:${GITHUB_REF##*/}
-          docker tag ghcr.io/tgagor/unifi-controller:ubuntu ghcr.io/tgagor/unifi-controller:ubuntu-${{ github.sha }}
-          docker tag ghcr.io/tgagor/unifi-controller:ubuntu ghcr.io/tgagor/unifi-controller:$(cat unifi-version)
-
-          docker push --all-tags  ghcr.io/tgagor/unifi-controller
+          docker push --all-tags ghcr.io/tgagor/unifi-controller
 
   security-scan:
     runs-on: ubuntu-20.04
@@ -41,16 +37,18 @@ jobs:
       - name: Fetch image
         run: |
           echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
-          docker pull ghcr.io/tgagor/unifi-controller:ubuntu-${{ github.sha }}
+          docker pull ghcr.io/tgagor/unifi-controller:${{ github.sha }}
 
       - name: Run Trivy vulnerability scanner on Alpine image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ghcr.io/tgagor/unifi-controller:ubuntu-${{ github.sha }}
+          image-ref: ghcr.io/tgagor/unifi-controller:${{ github.sha }}
           format: template
           template: '@/contrib/sarif.tpl'
+          # don't fail
           exit-code: 0
           output: trivy-results.sarif
+          severity: CRITICAL,HIGH,MEDIUM
 
       - name: Upload Trivy Alpine variant scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v1
@@ -70,7 +68,31 @@ jobs:
         uses: mathieudutour/github-tag-action@v5.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          custom_release_rules: bug:patch:Bug Fixes,hotfix:patch:Bug Fixes
+      - name: Extract version from tag on master
+        if: github.ref == 'refs/heads/master'
+        env:
+          VERSION_TAG: ${{ steps.tag_version.outputs.new_tag }}
+        run: echo "DOCKER_TAG=${VERSION_TAG#v}" >> $GITHUB_ENV
+
+      - name: Use branch name as version not on master
+        if: github.ref != 'refs/heads/master'
+        run: echo "DOCKER_TAG=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+      - name: Fetch and tag images
+        run: |
+          echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+
+          docker pull ghcr.io/tgagor/unifi-controller:${{ github.sha }}
+
+          docker tag ghcr.io/tgagor/centos:centos7-${{ github.sha }} tgagor/unifi-controller:${DOCKER_TAG}
+
+
+      - name: Push images
+        if: github.ref == 'refs/heads/master'
+        run: |
+          echo ${{ secrets.HUB_ACCESS }} | docker login -u $GITHUB_ACTOR --password-stdin
+
+          docker push --all-tags tgagor/unifi-controller
 
       - name: Create normal GitHub release
         if: github.ref == 'refs/heads/master' && github.event_name != 'schedule'
