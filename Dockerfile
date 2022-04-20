@@ -10,7 +10,8 @@ RUN apt-get update && \
     apt-get install -y ca-certificates apt-transport-https gnupg && \
     echo 'deb https://www.ui.com/downloads/unifi/debian stable ubiquiti' | tee /etc/apt/sources.list.d/unifi.list && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv 06E85760C0A52C50 && \
-    apt-get remove gnupg && \
+    apt-get remove -y gnupg && \
+    apt-get autoremove -y && \
     apt-get update && \
     apt-mark hold openjdk-11-* && \
     apt-get install -y openjdk-8-jre unifi
