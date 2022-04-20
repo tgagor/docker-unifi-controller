@@ -18,11 +18,37 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
+      
+      - name: Set up QEMU
+        id: qemu
+        uses: docker/setup-qemu-action@v1
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: all
+      - name: Available QEMU platforms
+        run: echo ${{ steps.qemu.outputs.platforms }}
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          install: true
+      - name: Available Buildx platforms
+        run: echo ${{ steps.buildx.outputs.platforms }}
+        
       - name: Build, tag and push the Docker image
         run: |
           echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
 
-          docker build --tag ghcr.io/tgagor/unifi-controller:${{ github.sha }} --cache-from ghcr.io/tgagor/unifi-controller:ubuntu .
+          # docker build \
+          #   --tag ghcr.io/tgagor/unifi-controller:${{ github.sha }} \
+          #   --cache-from ghcr.io/tgagor/unifi-controller:${{ github.sha }} .
+          docker buildx build \
+            --platform linux/amd64,linux/arm64,linux/ppc64le,linux/s390x \
+            --tag ghcr.io/tgagor/unifi-controller:${{ github.sha }} \
+            --squash \
+            --push \
+            .
 
           docker push --all-tags ghcr.io/tgagor/unifi-controller
 
