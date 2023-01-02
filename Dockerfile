@@ -12,9 +12,9 @@ RUN apt-get update && \
     echo 'deb https://www.ui.com/downloads/unifi/debian stable ubiquiti' | tee /etc/apt/sources.list.d/unifi.list && \
     curl -fsSLo /etc/apt/trusted.gpg.d/unifi-repo.gpg https://dl.ui.com/unifi/unifi-repo.gpg && \
     apt-get update && \
-    apt-mark hold openjdk-11-* && \
+    apt-mark hold openjdk-8-* && \
     apt-get install -y --no-install-recommends unifi
-    
+
 VOLUME /usr/lib/unifi/data
 
 WORKDIR /usr/lib/unifi
