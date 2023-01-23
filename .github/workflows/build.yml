@@ -48,6 +48,7 @@ jobs:
           output: trivy-results.sarif
           severity: CRITICAL,HIGH,MEDIUM
           security-checks: vuln
+          timeout: 10m0s
 
       - name: Upload Trivy Alpine variant scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v1
